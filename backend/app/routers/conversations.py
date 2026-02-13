@@ -1,8 +1,10 @@
+import asyncio
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+from sse_starlette.sse import EventSourceResponse
 
 from app.auth import get_current_user
 from app.database import AppSession
@@ -16,6 +18,7 @@ from app.schemas.api import (
     MessageResponse,
     SendMessageRequest,
 )
+from app.services import events
 
 router = APIRouter(prefix="/api/conversations", tags=["conversations"])
 
@@ -132,16 +135,21 @@ async def send_message(conversation_id: uuid.UUID, req: SendMessageRequest, curr
         if explore_step and explore_step.output_json:
             schema_context = explore_step.output_json.get("schema_context")
 
-        # Run pipeline
-        pipeline = Pipeline(conversation_id, assistant_msg.id)
-        answer = await pipeline.run(req.content, history, schema_context)
+        # Run pipeline as background task so SSE can stream events
+        async def _run_pipeline():
+            pipeline = Pipeline(conversation_id, assistant_msg.id)
+            answer = await pipeline.run(req.content, history, schema_context)
+            async with AppSession() as bg_session:
+                result = await bg_session.execute(
+                    select(Message).where(Message.id == assistant_msg.id)
+                )
+                msg = result.scalar_one()
+                msg.content = answer.text_answer
+                msg.table_data = answer.table_data.model_dump() if answer.table_data else None
+                msg.chart_data = answer.chart_data.model_dump() if answer.chart_data else None
+                await bg_session.commit()
 
-        # Update assistant message with results
-        assistant_msg.content = answer.text_answer
-        assistant_msg.table_data = answer.table_data.model_dump() if answer.table_data else None
-        assistant_msg.chart_data = answer.chart_data.model_dump() if answer.chart_data else None
-        await session.commit()
-        await session.refresh(assistant_msg)
+        asyncio.create_task(_run_pipeline())
 
         return assistant_msg
 
@@ -149,7 +157,7 @@ async def send_message(conversation_id: uuid.UUID, req: SendMessageRequest, curr
 @router.get("/{conversation_id}/stream")
 async def stream_pipeline(conversation_id: uuid.UUID, current_user: str = Depends(get_current_user)):
     """SSE endpoint for pipeline progress."""
-    raise NotImplementedError
+    return EventSourceResponse(events.subscribe(str(conversation_id)))
 
 
 @router.get("/{conversation_id}/pipeline-runs")

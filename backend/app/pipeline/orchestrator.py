@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlalchemy import select
 
 from app.database import AppSession
+from app.services import events
 from app.models.app import PipelineRun
 from app.models.app import PipelineStep as PipelineStepModel
 from app.pipeline.answer import AnswerStep
@@ -101,6 +102,10 @@ class Pipeline:
                     await session.commit()
                     await session.refresh(step_record)
 
+                    # Emit running event
+                    conv_id = str(self.conversation_id)
+                    await events.emit(conv_id, {"step": step.name, "status": "running"})
+
                     # Execute step
                     result = await step.execute_with_retry(input_data, llm_client)
 
@@ -109,6 +114,12 @@ class Pipeline:
                     step_record.status = "completed"
                     step_record.completed_at = datetime.utcnow()
                     await session.commit()
+
+                    # Emit completed event
+                    completed_event: dict = {"step": step.name, "status": "completed"}
+                    if step.name == "plan" and hasattr(result, "reasoning"):
+                        completed_event["summary"] = result.reasoning[:100]
+                    await events.emit(conv_id, completed_event)
 
                     # Track outputs for downstream steps
                     if step.name == "plan":
@@ -122,6 +133,8 @@ class Pipeline:
                 pipeline_run.status = "completed"
                 pipeline_run.completed_at = datetime.utcnow()
                 await session.commit()
+
+                await events.emit(conv_id, {"step": "done"})
 
             except Exception as exc:
                 pipeline_run.status = "failed"

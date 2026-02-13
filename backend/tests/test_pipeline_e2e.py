@@ -66,54 +66,35 @@ async def auth_client(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_send_message_e2e(auth_client: AsyncClient):
-    """Full flow: create conversation, send message, get assistant response."""
+    """send_message returns placeholder assistant message, pipeline runs in background."""
     convo = _make_convo()
-    router_ctx, router_session = _mock_session()
-    pipeline_ctx, pipeline_session = _mock_session()
-
-    # Track messages added to the router session
-    messages_added = []
-    original_add = router_session.add
+    ctx, session = _mock_session()
 
     def track_add(obj):
         if isinstance(obj, Message):
             obj.id = uuid.uuid4()
             obj.created_at = datetime(2026, 1, 1)
-            messages_added.append(obj)
-        original_add(obj)
 
-    router_session.add = track_add
+    session.add = track_add
+    session.refresh = AsyncMock()
 
-    # First execute: find conversation
-    # Second execute: load prior messages
-    # Third execute: find schema_context explore step
     convo_result = MagicMock()
     convo_result.scalar_one_or_none.return_value = convo
-
     msg_result = MagicMock()
     msg_result.scalars.return_value.all.return_value = []
-
     explore_result = MagicMock()
     explore_result.scalar_one_or_none.return_value = None
+    session.execute = AsyncMock(side_effect=[convo_result, msg_result, explore_result])
 
-    router_session.execute = AsyncMock(side_effect=[convo_result, msg_result, explore_result])
-
-    async def mock_refresh(obj):
-        if isinstance(obj, Message) and not hasattr(obj, "_refreshed"):
-            obj._refreshed = True
-
-    router_session.refresh = mock_refresh
-
-    # Mock Pipeline.run to avoid actual LLM calls
     fake_answer = _fake_answer()
 
     with (
-        patch("app.routers.conversations.AppSession", return_value=router_ctx),
+        patch("app.routers.conversations.AppSession", return_value=ctx),
         patch("app.routers.conversations.Pipeline") as MockPipeline,
     ):
-        mock_pipeline_instance = AsyncMock()
-        mock_pipeline_instance.run = AsyncMock(return_value=fake_answer)
-        MockPipeline.return_value = mock_pipeline_instance
+        mock_instance = AsyncMock()
+        mock_instance.run = AsyncMock(return_value=fake_answer)
+        MockPipeline.return_value = mock_instance
 
         resp = await auth_client.post(
             f"/api/conversations/{convo.id}/messages",
@@ -123,13 +104,8 @@ async def test_send_message_e2e(auth_client: AsyncClient):
     assert resp.status_code == 200
     data = resp.json()
     assert data["role"] == "assistant"
-    assert data["content"] == "There are 42 companies in the dataset."
-
-    # Verify pipeline was called with correct args
-    MockPipeline.assert_called_once_with(convo.id, messages_added[1].id)
-    mock_pipeline_instance.run.assert_awaited_once()
-    call_args = mock_pipeline_instance.run.call_args
-    assert call_args[0][0] == "How many companies are in the dataset?"
+    # Content is None — pipeline runs as background task
+    assert data["content"] is None
 
 
 @pytest.mark.asyncio
