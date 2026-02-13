@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -13,8 +13,12 @@ from app.schemas.api import (
 
 @pytest.fixture
 def answer_step():
-    step = AnswerStep()
-    return step
+    return AnswerStep()
+
+
+@pytest.fixture
+def mock_llm():
+    return AsyncMock()
 
 
 def _scalar_input():
@@ -94,26 +98,24 @@ def _dataset_input():
 
 
 @pytest.mark.asyncio
-async def test_answer_step_scalar(answer_step):
+async def test_answer_step_scalar(answer_step, mock_llm):
     fake_answer = AnswerOutput(
         text_answer="142 users signed up last month.",
         table_data=None,
         chart_data=None,
     )
 
-    with patch.object(
-        answer_step.llm_client, "chat_json", new_callable=AsyncMock, return_value=fake_answer
-    ) as mock_chat:
-        result = await answer_step.execute(_scalar_input())
+    mock_llm.chat_json = AsyncMock(return_value=fake_answer)
+    result = await answer_step.execute(_scalar_input(), mock_llm)
 
     assert isinstance(result, AnswerOutput)
     assert result.text_answer == "142 users signed up last month."
     assert result.table_data is None
     assert result.chart_data is None
-    mock_chat.assert_awaited_once()
+    mock_llm.chat_json.assert_awaited_once()
 
     # Verify the messages passed to chat_json
-    call_args = mock_chat.call_args
+    call_args = mock_llm.chat_json.call_args
     messages = call_args[0][0]
     assert messages[0]["role"] == "system"
     assert messages[1]["role"] == "user"
@@ -121,7 +123,7 @@ async def test_answer_step_scalar(answer_step):
 
 
 @pytest.mark.asyncio
-async def test_answer_step_chart(answer_step):
+async def test_answer_step_chart(answer_step, mock_llm):
     fake_answer = AnswerOutput(
         text_answer="Revenue is highest in Tech at $5M.",
         chart_data=ChartData(
@@ -137,10 +139,8 @@ async def test_answer_step_chart(answer_step):
         ),
     )
 
-    with patch.object(
-        answer_step.llm_client, "chat_json", new_callable=AsyncMock, return_value=fake_answer
-    ) as mock_chat:
-        result = await answer_step.execute(_chart_input())
+    mock_llm.chat_json = AsyncMock(return_value=fake_answer)
+    result = await answer_step.execute(_chart_input(), mock_llm)
 
     assert isinstance(result, AnswerOutput)
     assert result.text_answer == "Revenue is highest in Tech at $5M."
@@ -148,17 +148,17 @@ async def test_answer_step_chart(answer_step):
     assert result.chart_data.type == "bar"
     assert len(result.chart_data.data) == 3
     assert result.table_data is None
-    mock_chat.assert_awaited_once()
+    mock_llm.chat_json.assert_awaited_once()
 
     # Verify chart format instructions were included in system prompt
-    messages = mock_chat.call_args[0][0]
+    messages = mock_llm.chat_json.call_args[0][0]
     system_content = messages[0]["content"]
     assert "chart_data" in system_content
     assert "bar" in system_content
 
 
 @pytest.mark.asyncio
-async def test_answer_step_dataset(answer_step):
+async def test_answer_step_dataset(answer_step, mock_llm):
     fake_answer = AnswerOutput(
         text_answer="Here are the departments and headcounts.",
         table_data=TableData(
@@ -167,10 +167,8 @@ async def test_answer_step_dataset(answer_step):
         ),
     )
 
-    with patch.object(
-        answer_step.llm_client, "chat_json", new_callable=AsyncMock, return_value=fake_answer
-    ) as mock_chat:
-        result = await answer_step.execute(_dataset_input())
+    mock_llm.chat_json = AsyncMock(return_value=fake_answer)
+    result = await answer_step.execute(_dataset_input(), mock_llm)
 
     assert isinstance(result, AnswerOutput)
     assert result.text_answer == "Here are the departments and headcounts."
@@ -178,9 +176,9 @@ async def test_answer_step_dataset(answer_step):
     assert result.table_data.columns == ["Department", "Headcount"]
     assert len(result.table_data.rows) == 2
     assert result.chart_data is None
-    mock_chat.assert_awaited_once()
+    mock_llm.chat_json.assert_awaited_once()
 
     # Verify dataset format instructions were included in system prompt
-    messages = mock_chat.call_args[0][0]
+    messages = mock_llm.chat_json.call_args[0][0]
     system_content = messages[0]["content"]
     assert "table_data" in system_content

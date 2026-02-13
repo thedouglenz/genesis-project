@@ -6,7 +6,9 @@ from sqlalchemy.orm import selectinload
 
 from app.auth import get_current_user
 from app.database import AppSession
-from app.models.app import Conversation, Message
+from app.models.app import Conversation, Message, PipelineRun
+from app.models.app import PipelineStep as PipelineStepModel
+from app.pipeline.orchestrator import Pipeline
 from app.schemas.api import (
     ConversationDetailResponse,
     ConversationResponse,
@@ -72,7 +74,76 @@ async def delete_conversation(conversation_id: uuid.UUID, current_user: str = De
 @router.post("/{conversation_id}/messages", response_model=MessageResponse)
 async def send_message(conversation_id: uuid.UUID, req: SendMessageRequest, current_user: str = Depends(get_current_user)):
     """Send a user message and trigger the pipeline."""
-    raise NotImplementedError
+    async with AppSession() as session:
+        # Verify conversation exists
+        result = await session.execute(
+            select(Conversation).where(Conversation.id == conversation_id)
+        )
+        convo = result.scalar_one_or_none()
+        if not convo:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+
+        # Create user message
+        user_msg = Message(
+            conversation_id=conversation_id,
+            role="user",
+            content=req.content,
+        )
+        session.add(user_msg)
+        await session.commit()
+
+        # Create placeholder assistant message
+        assistant_msg = Message(
+            conversation_id=conversation_id,
+            role="assistant",
+        )
+        session.add(assistant_msg)
+        await session.commit()
+        await session.refresh(assistant_msg)
+
+        # Load conversation history (prior messages, excluding the new ones)
+        msg_result = await session.execute(
+            select(Message)
+            .where(Message.conversation_id == conversation_id)
+            .where(Message.id != user_msg.id)
+            .where(Message.id != assistant_msg.id)
+            .order_by(Message.created_at)
+        )
+        prior_messages = msg_result.scalars().all()
+
+        history = [
+            {"role": m.role, "content": m.content or ""}
+            for m in prior_messages
+        ]
+
+        # Extract schema_context from last ExploreOutput in pipeline history
+        schema_context = None
+        explore_result = await session.execute(
+            select(PipelineStepModel)
+            .join(PipelineRun, PipelineStepModel.pipeline_run_id == PipelineRun.id)
+            .join(Message, PipelineRun.message_id == Message.id)
+            .where(Message.conversation_id == conversation_id)
+            .where(PipelineStepModel.step_name == "explore")
+            .where(PipelineStepModel.status == "completed")
+            .order_by(PipelineStepModel.created_at.desc())
+            .limit(1)
+        )
+        explore_step = explore_result.scalar_one_or_none()
+        if explore_step and explore_step.output_json:
+            schema_context = explore_step.output_json.get("schema_context")
+
+        # Run pipeline
+        pipeline = Pipeline(conversation_id, assistant_msg.id)
+        answer = await pipeline.run(req.content, history, schema_context)
+
+        # Update assistant message with results
+        assistant_msg.content = answer.text_answer
+        assistant_msg.table_data = answer.table_data.model_dump() if answer.table_data else None
+        assistant_msg.chart_data = answer.chart_data.model_dump() if answer.chart_data else None
+        await session.commit()
+        await session.refresh(assistant_msg)
+
+        return assistant_msg
 
 
 @router.get("/{conversation_id}/stream")

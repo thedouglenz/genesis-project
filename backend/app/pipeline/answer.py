@@ -19,10 +19,7 @@ class AnswerStep(PipelineStep):
         "answer. Choose the appropriate format (text, table, chart) based on the plan."
     )
 
-    def __init__(self, llm_client: LLMClient | None = None):
-        self.llm_client = llm_client or LLMClient()
-
-    async def execute(self, input_data: Any) -> AnswerOutput:
+    async def execute(self, input_data: Any, llm_client: LLMClient) -> AnswerOutput:
         question = input_data["question"]
         plan = input_data["plan"]
         exploration = input_data["exploration"]
@@ -60,4 +57,4 @@ class AnswerStep(PipelineStep):
             },
         ]
 
-        return await self.llm_client.chat_json(messages, AnswerOutput)
+        return await llm_client.chat_json(messages, AnswerOutput)
