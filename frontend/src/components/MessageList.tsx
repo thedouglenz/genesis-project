@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { Message } from '../types';
 import type { StepState } from '../hooks/useSSE';
 import AssistantMessage from './AssistantMessage';
@@ -16,7 +17,12 @@ export default function MessageList({
   streamingSteps,
   isStreaming,
 }: MessageListProps) {
+  const bottomRef = useRef<HTMLDivElement>(null);
   const hasContent = messages.length > 0 || pendingUserMessage;
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, pendingUserMessage, streamingSteps]);
 
   if (!hasContent) {
     return (
@@ -78,6 +84,7 @@ export default function MessageList({
           </div>
         </div>
       )}
+      <div ref={bottomRef} />
     </div>
   );
 }
