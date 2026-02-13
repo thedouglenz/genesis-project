@@ -1,0 +1,8 @@
+-- Create a read-write role for the genesis_solution (app) database
+CREATE ROLE genesis_app_rw WITH LOGIN PASSWORD '<SET_PASSWORD>';
+GRANT CONNECT ON DATABASE genesis_solution TO genesis_app_rw;
+GRANT USAGE, CREATE ON SCHEMA public TO genesis_app_rw;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO genesis_app_rw;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO genesis_app_rw;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO genesis_app_rw;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO genesis_app_rw;
