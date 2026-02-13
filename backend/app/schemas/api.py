@@ -84,12 +84,17 @@ class ExploreOutput(BaseModel):
     schema_context: dict
 
 
+class ChartDataPoint(BaseModel):
+    label: str
+    value: float
+
+
 class ChartData(BaseModel):
     type: Literal["bar", "line", "pie", "scatter"]
     title: str
     x_axis: str
     y_axis: str
-    data: list[dict]
+    data: list[ChartDataPoint]
 
 
 class TableData(BaseModel):

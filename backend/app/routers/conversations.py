@@ -55,7 +55,3 @@ async def get_pipeline_runs(conversation_id: uuid.UUID):
     raise NotImplementedError
 
 
-@router.post("/pipeline-runs/{run_id}/retry")
-async def retry_pipeline_run(run_id: uuid.UUID):
-    """Retry a failed pipeline run."""
-    raise NotImplementedError
