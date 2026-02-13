@@ -5,10 +5,11 @@ import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 
 export default function ChatPane({ conversationId }: { conversationId: string | null }) {
-  const { data: conversation } = useConversation(conversationId);
+  const { data: conversation, isLoading, isError } = useConversation(conversationId);
   const sendMessage = useSendMessage();
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [streaming, setStreaming] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const { steps, isStreaming, isComplete, reset } = useSSE(conversationId, streaming);
 
@@ -22,9 +23,19 @@ export default function ChatPane({ conversationId }: { conversationId: string | 
   const handleSend = useCallback(
     (content: string) => {
       if (!conversationId) return;
+      setSendError(null);
       setPendingMessage(content);
       setStreaming(true);
-      sendMessage.mutate({ conversationId, content });
+      sendMessage.mutate(
+        { conversationId, content },
+        {
+          onError: () => {
+            setSendError('Failed to send message. Try again.');
+            setPendingMessage(null);
+            setStreaming(false);
+          },
+        }
+      );
     },
     [conversationId, sendMessage]
   );
@@ -37,8 +48,35 @@ export default function ChatPane({ conversationId }: { conversationId: string | 
     );
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center text-gray-400">
+        Loading conversation...
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-1 items-center justify-center text-red-500">
+        Failed to load conversation
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-1 flex-col">
+      {sendError && (
+        <div className="flex items-center justify-between bg-red-50 px-4 py-2 text-sm text-red-700">
+          <span>{sendError}</span>
+          <button
+            onClick={() => setSendError(null)}
+            className="ml-2 font-medium hover:text-red-900"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       <MessageList
         messages={conversation?.messages ?? []}
         pendingUserMessage={pendingMessage ?? undefined}

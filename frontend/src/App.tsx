@@ -8,6 +8,11 @@ function App() {
 
   const handleLogin = useCallback(() => setAuthed(true), []);
 
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('token');
+    setAuthed(false);
+  }, []);
+
   if (!authed) {
     return <LoginPage onLogin={handleLogin} />;
   }
@@ -15,7 +20,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<ChatLayout />} />
+        <Route path="/" element={<ChatLayout onLogout={handleLogout} />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

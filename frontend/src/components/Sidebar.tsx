@@ -3,9 +3,11 @@ import { useConversations, useCreateConversation } from '../hooks/useConversatio
 export default function Sidebar({
   activeId,
   onSelect,
+  onLogout,
 }: {
   activeId: string | null;
   onSelect: (id: string) => void;
+  onLogout: () => void;
 }) {
   const { data: conversations, isLoading } = useConversations();
   const createConversation = useCreateConversation();
@@ -37,10 +39,18 @@ export default function Sidebar({
               activeId === c.id ? 'bg-gray-200 font-medium' : ''
             }`}
           >
-            {c.title || 'Untitled'}
+            {c.title || 'New conversation'}
           </button>
         ))}
       </nav>
+      <div className="border-t border-gray-200 p-3">
+        <button
+          onClick={onLogout}
+          className="w-full rounded px-3 py-2 text-sm text-gray-600 hover:bg-gray-200"
+        >
+          Log out
+        </button>
+      </div>
     </aside>
   );
 }
