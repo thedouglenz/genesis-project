@@ -36,6 +36,34 @@ Created a read-only Postgres role (`company_ro`) on the Neon `company_data` data
 
 Created a `companies` table in `company_data` and loaded 500 rows from `sample_data.csv`. Columns: company_name, industry_vertical, founding_year, arr_thousands, employee_count, churn_rate_percent, yoy_growth_rate_percent. Schema SQL lives in `db/seed_target.sql`. Verified the `company_ro` role can query it — SELECT works, no write access.
 
+### App database setup
+
+Created a read-write role (`genesis_app_rw`) on the `genesis_solution` database for app state. Created all four tables (conversations, messages, pipeline_runs, pipeline_steps) with proper foreign keys and cascading deletes. SQL lives in `db/setup_app_tables.sql`.
+
+### Backend implementation
+
+Implemented the full backend in three waves, working bottom-up through the dependency graph.
+
+**Foundation layer:**
+- JWT auth — login endpoint, token creation/validation, FastAPI dependency on all protected routes
+- Conversation CRUD — create, list, get (with eager-loaded messages), delete
+- All endpoints use async SQLAlchemy sessions against the app database
+
+**Data tools + LLM client:**
+- SQL safety module — rejects anything that isn't a SELECT, blocks dangerous keywords, prevents multi-statement injection
+- Four tools implemented against the target database: list_tables (information_schema), show_schema, sample_data, query (with 1000-row cap)
+- LiteLLM client wrapper with two modes: `chat()` for tool-calling conversations, `chat_json()` for structured output parsed into Pydantic models. Handles markdown code blocks in LLM responses.
+
+**Pipeline:**
+- Plan step — analyzes the user question, determines query strategy and expected answer format (scalar/dataset/chart). Includes conversation history and cached schema context for follow-up efficiency.
+- Explore step — agentic tool-call loop (max 20 iterations). LLM decides which tools to call, executes them, appends results, and repeats until it has enough data. Produces an ExploreOutput with queries executed, raw data, and schema context for caching.
+- Answer step — formats explored data into a structured AnswerOutput with text, optional table, and optional chart data based on the plan's expected answer type.
+- Orchestrator — chains plan→explore→answer, creates PipelineRun/PipelineStep records in the database, persists input/output at each step. Retry logic built into the base class.
+- SSE streaming — per-conversation event bus using asyncio.Queue. Orchestrator emits events at each step transition. send_message runs the pipeline as a background task so it returns immediately while events stream.
+- Pipeline runs endpoints — list runs with steps for a conversation, retry failed runs.
+
+**Testing:** 57 tests, all fully mocked (no real DB or network I/O), run in under 1 second.
+
 ### Housekeeping
 
 - Removed project plan and `.env` from git tracking; added both to `.gitignore`
