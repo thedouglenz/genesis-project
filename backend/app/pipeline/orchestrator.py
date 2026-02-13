@@ -145,7 +145,7 @@ class Pipeline:
                 pipeline_run.completed_at = datetime.utcnow()
                 await session.commit()
 
-                await events.emit(conv_id, {"step": "done"})
+                # Note: "done" event is emitted by _run_pipeline after message content is persisted
 
             except Exception as exc:
                 pipeline_run.status = "failed"

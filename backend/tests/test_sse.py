@@ -190,7 +190,7 @@ async def test_orchestrator_emits_events():
         await pipeline.run("test")
 
     # Should have: plan running, plan completed, explore running, explore completed,
-    # answer running, answer completed, done
+    # answer running, answer completed (done is emitted by _run_pipeline after content persist)
     step_events = [(e.get("step"), e.get("status")) for e in received_events]
     assert ("plan", "running") in step_events
     assert ("plan", "completed") in step_events
@@ -198,4 +198,3 @@ async def test_orchestrator_emits_events():
     assert ("explore", "completed") in step_events
     assert ("answer", "running") in step_events
     assert ("answer", "completed") in step_events
-    assert ("done", None) in step_events

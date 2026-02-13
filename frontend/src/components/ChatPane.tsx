@@ -13,8 +13,11 @@ export default function ChatPane({ conversationId }: { conversationId: string | 
 
   const { steps, isStreaming, isComplete, reset } = useSSE(conversationId, streaming);
 
-  // When SSE completes, clear the optimistic state
-  if (isComplete && pendingMessage !== null) {
+  // When SSE completes, only clear optimistic state once refetched data has the real response.
+  // This prevents a flash of empty content between "done" and the refetch completing.
+  const lastMsg = conversation?.messages?.[conversation.messages.length - 1];
+  const hasRealResponse = lastMsg?.role === 'assistant' && !!lastMsg.content;
+  if (isComplete && pendingMessage !== null && hasRealResponse) {
     setPendingMessage(null);
     setStreaming(false);
     reset();

@@ -183,6 +183,9 @@ async def send_message(conversation_id: uuid.UUID, req: SendMessageRequest, curr
 
                 await bg_session.commit()
 
+            # Emit "done" AFTER content is persisted so frontend refetch gets real data
+            await events.emit(str(conversation_id), {"step": "done"})
+
         asyncio.create_task(_run_pipeline())
 
         return assistant_msg
