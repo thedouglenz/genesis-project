@@ -184,6 +184,75 @@ async def test_pipeline_run_persists_steps():
 
 
 @pytest.mark.asyncio
+async def test_pipeline_skips_explore_when_flagged():
+    """Pipeline.run() skips explore step when plan says skip_explore=True."""
+    ctx, session = _mock_session()
+    records_added = []
+
+    def track_add(obj):
+        if isinstance(obj, (PipelineRun, PipelineStepModel)):
+            obj.id = uuid.uuid4()
+            records_added.append(obj)
+
+    session.add = track_add
+
+    async def mock_refresh(obj):
+        pass
+
+    session.refresh = mock_refresh
+
+    fake_plan = PlanOutput(
+        reasoning="User wants a pie chart of already-fetched data",
+        query_strategy="Reformat existing data",
+        expected_answer_type="chart",
+        suggested_chart_type="pie",
+        tables_to_explore=[],
+        skip_explore=True,
+    )
+    fake_answer = AnswerOutput(
+        text_answer="Here is the pie chart.",
+        table_data=None,
+        chart_data=None,
+    )
+
+    call_count = 0
+
+    async def mock_execute_with_retry(input_data, llm_client):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return fake_plan
+        else:
+            return fake_answer
+
+    with patch("app.pipeline.orchestrator.AppSession", return_value=ctx):
+        from app.pipeline.orchestrator import Pipeline
+
+        pipeline = Pipeline(uuid.uuid4(), uuid.uuid4())
+        for step in pipeline.steps:
+            step.execute_with_retry = mock_execute_with_retry
+
+        with patch("app.pipeline.orchestrator.LLMClient"):
+            result = await pipeline.run(
+                "Show that as a pie chart",
+                conversation_history=[
+                    {"role": "user", "content": "How many companies per industry?"},
+                    {"role": "assistant", "content": "Construction: 34, Legal Tech: 31..."},
+                ],
+            )
+
+    assert isinstance(result, AnswerOutput)
+    assert result.text_answer == "Here is the pie chart."
+
+    # Should have 1 PipelineRun + 2 PipelineSteps (plan + answer, no explore)
+    runs = [r for r in records_added if isinstance(r, PipelineRun)]
+    steps = [r for r in records_added if isinstance(r, PipelineStepModel)]
+    assert len(runs) == 1
+    assert len(steps) == 2
+    assert [s.step_name for s in steps] == ["plan", "answer"]
+
+
+@pytest.mark.asyncio
 async def test_pipeline_run_handles_failure():
     """Pipeline.run() marks run as failed on exception."""
     ctx, session = _mock_session()

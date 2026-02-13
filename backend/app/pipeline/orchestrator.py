@@ -62,7 +62,14 @@ class Pipeline:
             answer_output: AnswerOutput | None = None
 
             try:
-                for step_order, step in enumerate(self.steps):
+                # Determine which steps to run
+                active_steps: list[PipelineStep] = list(self.steps)  # [plan, explore, answer]
+
+                for step_order, step in enumerate(active_steps):
+                    # After plan, check if we should skip explore
+                    if step.name == "explore" and plan_output and plan_output.skip_explore:
+                        continue
+
                     # Build input data for each step
                     if step.name == "plan":
                         input_data = {
@@ -79,7 +86,8 @@ class Pipeline:
                         input_data = {
                             "question": user_question,
                             "plan": plan_output.model_dump(),
-                            "exploration": explore_output.model_dump(),
+                            "exploration": explore_output.model_dump() if explore_output else None,
+                            "history": history,
                         }
                     else:
                         raise ValueError(f"Unknown step: {step.name}")
