@@ -25,7 +25,7 @@ function InfoIcon({ tooltip }: { tooltip: string }) {
   return (
     <span
       title={tooltip}
-      className="ml-1 inline-flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full bg-gray-200 text-[9px] font-bold text-gray-500"
+      className="ml-1 inline-flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full bg-gray-600 text-[9px] font-bold text-gray-400"
     >
       i
     </span>
@@ -45,13 +45,13 @@ function StepLabel({ step, status }: { step: string; status: string }) {
 
 function Spinner() {
   return (
-    <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
+    <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-600 border-t-blue-400" />
   );
 }
 
 function Checkmark() {
   return (
-    <svg className="h-3.5 w-3.5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+    <svg className="h-3.5 w-3.5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
       <path
         fillRule="evenodd"
         d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -80,10 +80,10 @@ export default function ThinkingCollapsible(props: ThinkingCollapsibleProps) {
     const label = `Analyzed in ${stepCount} step${stepCount !== 1 ? 's' : ''}`;
 
     return (
-      <div className="my-2 rounded-lg bg-gray-50 text-sm">
+      <div className="my-2 rounded-lg bg-gray-700/50 text-sm">
         <button
           onClick={() => setExpanded((e) => !e)}
-          className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-gray-600 hover:text-gray-900"
+          className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-gray-400 hover:text-gray-200"
         >
           <svg
             className={`h-3 w-3 transition-transform ${expanded ? 'rotate-90' : ''}`}
@@ -108,24 +108,24 @@ export default function ThinkingCollapsible(props: ThinkingCollapsibleProps) {
                   <StepLabel step={s.name} status={s.status} />
                 </div>
                 {s.summary && (
-                  <p className="pl-5.5 text-xs text-gray-500">{s.summary}</p>
+                  <p className="pl-5.5 text-xs text-gray-400">{s.summary}</p>
                 )}
                 {s.query_strategy && (
-                  <p className="pl-5.5 text-xs text-gray-400">
+                  <p className="pl-5.5 text-xs text-gray-500">
                     Strategy: {s.query_strategy}
                   </p>
                 )}
                 {s.queries && s.queries.length > 0 && (
                   <div className="pl-5.5 space-y-0.5">
                     {s.queries.map((q, qi) => (
-                      <code key={qi} className="block text-xs text-gray-400 font-mono truncate">
+                      <code key={qi} className="block text-xs text-gray-500 font-mono truncate">
                         {q}
                       </code>
                     ))}
                   </div>
                 )}
                 {s.exploration_notes && (
-                  <p className="pl-5.5 text-xs text-gray-400">{s.exploration_notes}</p>
+                  <p className="pl-5.5 text-xs text-gray-500">{s.exploration_notes}</p>
                 )}
               </div>
             ))}
@@ -142,7 +142,7 @@ export default function ThinkingCollapsible(props: ThinkingCollapsibleProps) {
     : `Thought for ${steps.length} step${steps.length !== 1 ? 's' : ''}`;
 
   return (
-    <div className="my-2 rounded-lg bg-gray-50 text-sm">
+    <div className="my-2 rounded-lg bg-gray-700/50 text-sm">
       <button
         onClick={() => setExpanded((e) => !e)}
         className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-gray-600 hover:text-gray-900"

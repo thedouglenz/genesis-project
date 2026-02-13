@@ -18,14 +18,14 @@ export default function MessageInput({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 border-t border-gray-200 p-4">
+    <form onSubmit={handleSubmit} className="flex gap-2 border-t border-gray-700 p-4">
       <input
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="Ask about your data..."
         disabled={disabled}
-        className="flex-1 rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+        className="flex-1 rounded border border-gray-600 bg-gray-800 px-3 py-2 text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:outline-none disabled:opacity-50"
       />
       <button
         type="submit"

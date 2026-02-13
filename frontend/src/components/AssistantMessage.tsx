@@ -27,27 +27,27 @@ function ChartRenderer({ chart }: { chart: ChartData }) {
 
   return (
     <div className="my-2">
-      <p className="mb-1 text-sm font-medium text-gray-700">{chart.title}</p>
+      <p className="mb-1 text-sm font-medium text-gray-300">{chart.title}</p>
       <ResponsiveContainer width="100%" height={250}>
         {chart.type === 'bar' ? (
           <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <XAxis dataKey="name" stroke="#9ca3af" />
+            <YAxis stroke="#9ca3af" />
+            <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#f3f4f6' }} />
             <Bar dataKey="value" fill="#3b82f6" />
           </BarChart>
         ) : chart.type === 'line' ? (
           <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <XAxis dataKey="name" stroke="#9ca3af" />
+            <YAxis stroke="#9ca3af" />
+            <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#f3f4f6' }} />
             <Line type="monotone" dataKey="value" stroke="#3b82f6" />
           </LineChart>
         ) : chart.type === 'pie' ? (
           <PieChart>
-            <Tooltip />
+            <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#f3f4f6' }} />
             <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}>
               {data.map((_, i) => (
                 <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -56,10 +56,10 @@ function ChartRenderer({ chart }: { chart: ChartData }) {
           </PieChart>
         ) : (
           <ScatterChart>
-            <CartesianGrid />
-            <XAxis dataKey="name" />
-            <YAxis dataKey="value" />
-            <Tooltip />
+            <CartesianGrid stroke="#374151" />
+            <XAxis dataKey="name" stroke="#9ca3af" />
+            <YAxis dataKey="value" stroke="#9ca3af" />
+            <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#f3f4f6' }} />
             <Scatter data={data} fill="#3b82f6" />
           </ScatterChart>
         )}
@@ -76,7 +76,7 @@ interface AssistantMessageProps {
 
 export default function AssistantMessage({ message, streamingSteps, isStreaming }: AssistantMessageProps) {
   return (
-    <div className="max-w-lg space-y-2 rounded-lg bg-gray-100 px-4 py-2 text-gray-900">
+    <div className="max-w-lg space-y-2 rounded-lg bg-gray-800 px-4 py-2 text-gray-100">
       {streamingSteps && streamingSteps.length > 0 && (
         <ThinkingCollapsible steps={streamingSteps} isStreaming={isStreaming ?? false} />
       )}
@@ -86,7 +86,7 @@ export default function AssistantMessage({ message, streamingSteps, isStreaming 
       )}
 
       {message.content && (
-        <div className="prose prose-sm prose-gray max-w-none">
+        <div className="prose prose-sm prose-invert max-w-none">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
         </div>
       )}
@@ -97,7 +97,7 @@ export default function AssistantMessage({ message, streamingSteps, isStreaming 
             <thead>
               <tr>
                 {message.table_data.columns.map((col) => (
-                  <th key={col} className="border-b px-2 py-1 text-left font-medium">
+                  <th key={col} className="border-b border-gray-600 px-2 py-1 text-left font-medium text-gray-300">
                     {col}
                   </th>
                 ))}
@@ -107,7 +107,7 @@ export default function AssistantMessage({ message, streamingSteps, isStreaming 
               {message.table_data.rows.map((row, i) => (
                 <tr key={i}>
                   {row.map((cell, j) => (
-                    <td key={j} className="border-b px-2 py-1">
+                    <td key={j} className="border-b border-gray-700 px-2 py-1 text-gray-300">
                       {String(cell)}
                     </td>
                   ))}

@@ -27,7 +27,7 @@ export default function Sidebar({
   };
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-gray-200 bg-gray-50">
+    <aside className="flex h-full w-64 flex-col border-r border-gray-700 bg-gray-800">
       <div className="p-3">
         <button
           onClick={handleNew}
@@ -43,21 +43,21 @@ export default function Sidebar({
         {conversations?.map((c) => (
           <div
             key={c.id}
-            className={`group flex items-center hover:bg-gray-100 ${
-              activeId === c.id ? 'bg-gray-200' : ''
+            className={`group flex items-center hover:bg-gray-700 ${
+              activeId === c.id ? 'bg-gray-700' : ''
             }`}
           >
             <button
               onClick={() => onSelect(c.id)}
-              className={`flex-1 truncate px-3 py-2 text-left text-sm ${
-                activeId === c.id ? 'font-medium' : ''
+              className={`flex-1 truncate px-3 py-2 text-left text-sm text-gray-300 ${
+                activeId === c.id ? 'font-medium text-white' : ''
               }`}
             >
               {c.title || 'New conversation'}
             </button>
             <button
               onClick={(e) => handleDelete(e, c.id)}
-              className="mr-1 hidden rounded p-1 text-gray-400 hover:bg-gray-300 hover:text-gray-700 group-hover:block"
+              className="mr-1 hidden rounded p-1 text-gray-500 hover:bg-gray-600 hover:text-gray-300 group-hover:block"
               title="Delete conversation"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
@@ -67,10 +67,10 @@ export default function Sidebar({
           </div>
         ))}
       </nav>
-      <div className="border-t border-gray-200 p-3">
+      <div className="border-t border-gray-700 p-3">
         <button
           onClick={onLogout}
-          className="w-full rounded px-3 py-2 text-sm text-gray-600 hover:bg-gray-200"
+          className="w-full rounded px-3 py-2 text-sm text-gray-400 hover:bg-gray-700 hover:text-gray-200"
         >
           Log out
         </button>

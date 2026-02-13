@@ -20,7 +20,7 @@ export default function MessageList({
 
   if (!hasContent) {
     return (
-      <div className="flex flex-1 items-center justify-center text-gray-400">
+      <div className="flex flex-1 items-center justify-center text-gray-500">
         Ask a question about your data
       </div>
     );
@@ -45,7 +45,7 @@ export default function MessageList({
       {messages.map((msg, idx) =>
         msg.role === 'user' ? (
           <div key={msg.id} className="flex justify-end">
-            <div className="max-w-lg rounded-lg bg-blue-600 px-4 py-2 text-white">
+            <div className="max-w-lg rounded-lg bg-blue-600 px-4 py-2 text-gray-100">
               {msg.content}
             </div>
           </div>
@@ -65,7 +65,7 @@ export default function MessageList({
           (m) => m.role === 'user' && m.content === pendingUserMessage
         ) && (
           <div className="flex justify-end">
-            <div className="max-w-lg rounded-lg bg-blue-600 px-4 py-2 text-white">
+            <div className="max-w-lg rounded-lg bg-blue-600 px-4 py-2 text-gray-100">
               {pendingUserMessage}
             </div>
           </div>
@@ -73,7 +73,7 @@ export default function MessageList({
 
       {streamingSteps && streamingTargetIdx === -1 && (
         <div className="flex justify-start">
-          <div className="max-w-lg rounded-lg bg-gray-100 px-4 py-2 text-gray-900">
+          <div className="max-w-lg rounded-lg bg-gray-800 px-4 py-2 text-gray-100">
             <ThinkingCollapsible steps={streamingSteps} isStreaming={isStreaming ?? false} />
           </div>
         </div>

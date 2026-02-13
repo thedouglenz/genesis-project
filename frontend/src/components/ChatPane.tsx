@@ -45,7 +45,7 @@ export default function ChatPane({ conversationId }: { conversationId: string | 
 
   if (!conversationId) {
     return (
-      <div className="flex flex-1 items-center justify-center text-gray-400">
+      <div className="flex flex-1 items-center justify-center text-gray-500">
         Select or create a conversation
       </div>
     );
@@ -53,7 +53,7 @@ export default function ChatPane({ conversationId }: { conversationId: string | 
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 items-center justify-center text-gray-400">
+      <div className="flex flex-1 items-center justify-center text-gray-500">
         Loading conversation...
       </div>
     );
@@ -61,7 +61,7 @@ export default function ChatPane({ conversationId }: { conversationId: string | 
 
   if (isError) {
     return (
-      <div className="flex flex-1 items-center justify-center text-red-500">
+      <div className="flex flex-1 items-center justify-center text-red-400">
         Failed to load conversation
       </div>
     );
@@ -70,11 +70,11 @@ export default function ChatPane({ conversationId }: { conversationId: string | 
   return (
     <div className="flex flex-1 flex-col">
       {sendError && (
-        <div className="flex items-center justify-between bg-red-50 px-4 py-2 text-sm text-red-700">
+        <div className="flex items-center justify-between bg-red-900/30 px-4 py-2 text-sm text-red-400">
           <span>{sendError}</span>
           <button
             onClick={() => setSendError(null)}
-            className="ml-2 font-medium hover:text-red-900"
+            className="ml-2 font-medium hover:text-red-200"
           >
             Dismiss
           </button>
