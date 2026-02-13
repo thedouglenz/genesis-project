@@ -15,6 +15,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { Message, ChartData } from '../types';
+import type { StepState } from '../hooks/useSSE';
+import ThinkingCollapsible from './ThinkingCollapsible';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
@@ -64,9 +66,23 @@ function ChartRenderer({ chart }: { chart: ChartData }) {
   );
 }
 
-export default function AssistantMessage({ message }: { message: Message }) {
+interface AssistantMessageProps {
+  message: Message;
+  streamingSteps?: StepState[];
+  isStreaming?: boolean;
+}
+
+export default function AssistantMessage({ message, streamingSteps, isStreaming }: AssistantMessageProps) {
   return (
     <div className="max-w-lg space-y-2 rounded-lg bg-gray-100 px-4 py-2 text-gray-900">
+      {streamingSteps && streamingSteps.length > 0 && (
+        <ThinkingCollapsible steps={streamingSteps} isStreaming={isStreaming ?? false} />
+      )}
+
+      {!streamingSteps && message.pipeline_data && (
+        <ThinkingCollapsible pipelineData={message.pipeline_data} />
+      )}
+
       {message.content && <p className="whitespace-pre-wrap">{message.content}</p>}
 
       {message.table_data && (

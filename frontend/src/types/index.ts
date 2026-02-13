@@ -5,6 +5,19 @@ export interface Conversation {
   updated_at: string;
 }
 
+export interface PipelineStepData {
+  name: string;
+  status: string;
+  summary?: string;
+  query_strategy?: string;
+  queries?: string[];
+  exploration_notes?: string;
+}
+
+export interface PipelineData {
+  steps: PipelineStepData[];
+}
+
 export interface Message {
   id: string;
   conversation_id: string;
@@ -12,6 +25,7 @@ export interface Message {
   content: string | null;
   table_data: TableData | null;
   chart_data: ChartData | null;
+  pipeline_data: PipelineData | null;
   created_at: string;
 }
 

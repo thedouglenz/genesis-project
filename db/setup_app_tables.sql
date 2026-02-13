@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS messages (
     content TEXT,
     table_data JSONB,
     chart_data JSONB,
+    pipeline_data JSONB,
     created_at TIMESTAMP DEFAULT NOW()
 );
 

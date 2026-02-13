@@ -30,6 +30,7 @@ class Message(Base):
     content: Mapped[str | None] = mapped_column(Text)
     table_data: Mapped[dict | None] = mapped_column(JSONB)
     chart_data: Mapped[dict | None] = mapped_column(JSONB)
+    pipeline_data: Mapped[dict | None] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     conversation: Mapped["Conversation"] = relationship(back_populates="messages")

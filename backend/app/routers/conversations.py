@@ -8,8 +8,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from app.auth import get_current_user
 from app.database import AppSession
-from app.models.app import Conversation, Message, PipelineRun
-from app.models.app import PipelineStep as PipelineStepModel
+from app.models.app import Conversation, Message, PipelineRun, PipelineStep as PipelineStepModel
 from app.pipeline.orchestrator import Pipeline
 from app.schemas.api import (
     ConversationDetailResponse,
@@ -148,6 +147,40 @@ async def send_message(conversation_id: uuid.UUID, req: SendMessageRequest, curr
                 msg.content = answer.text_answer
                 msg.table_data = answer.table_data.model_dump() if answer.table_data else None
                 msg.chart_data = answer.chart_data.model_dump() if answer.chart_data else None
+
+                # Build pipeline_data summary from completed step records
+                run_result = await bg_session.execute(
+                    select(PipelineRun)
+                    .options(selectinload(PipelineRun.steps))
+                    .where(PipelineRun.message_id == assistant_msg.id)
+                    .order_by(PipelineRun.created_at.desc())
+                    .limit(1)
+                )
+                pipeline_run = run_result.scalar_one_or_none()
+                if pipeline_run:
+                    pipeline_steps = []
+                    for step in sorted(pipeline_run.steps, key=lambda s: s.step_order):
+                        step_info: dict = {
+                            "name": step.step_name,
+                            "status": step.status,
+                        }
+                        if step.step_name == "plan" and step.output_json:
+                            reasoning = step.output_json.get("reasoning", "")
+                            strategy = step.output_json.get("query_strategy", "")
+                            step_info["summary"] = reasoning[:200] if reasoning else ""
+                            step_info["query_strategy"] = strategy
+                        elif step.step_name == "explore" and step.output_json:
+                            queries = step.output_json.get("queries_executed", [])
+                            step_info["summary"] = f"Executed {len(queries)} quer{'y' if len(queries) == 1 else 'ies'}"
+                            step_info["queries"] = [q.get("sql", "") for q in queries]
+                            notes = step.output_json.get("exploration_notes", "")
+                            if notes:
+                                step_info["exploration_notes"] = notes[:300]
+                        elif step.step_name == "answer":
+                            step_info["summary"] = "Generated answer"
+                        pipeline_steps.append(step_info)
+                    msg.pipeline_data = {"steps": pipeline_steps}
+
                 await bg_session.commit()
 
         asyncio.create_task(_run_pipeline())

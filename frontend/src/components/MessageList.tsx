@@ -26,9 +26,23 @@ export default function MessageList({
     );
   }
 
+  // Find the last assistant message to attach streaming steps to
+  const lastAssistantIdx = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'assistant') return i;
+    }
+    return -1;
+  })();
+
+  // Streaming steps attach to the last assistant message that has no content yet (pending)
+  const streamingTargetIdx =
+    streamingSteps && lastAssistantIdx >= 0 && !messages[lastAssistantIdx].content
+      ? lastAssistantIdx
+      : -1;
+
   return (
     <div className="flex-1 space-y-4 overflow-y-auto p-4">
-      {messages.map((msg) =>
+      {messages.map((msg, idx) =>
         msg.role === 'user' ? (
           <div key={msg.id} className="flex justify-end">
             <div className="max-w-lg rounded-lg bg-blue-600 px-4 py-2 text-white">
@@ -37,7 +51,11 @@ export default function MessageList({
           </div>
         ) : (
           <div key={msg.id} className="flex justify-start">
-            <AssistantMessage message={msg} />
+            <AssistantMessage
+              message={msg}
+              streamingSteps={idx === streamingTargetIdx ? streamingSteps : undefined}
+              isStreaming={idx === streamingTargetIdx ? isStreaming : undefined}
+            />
           </div>
         )
       )}
@@ -53,7 +71,7 @@ export default function MessageList({
           </div>
         )}
 
-      {streamingSteps && (
+      {streamingSteps && streamingTargetIdx === -1 && (
         <div className="flex justify-start">
           <div className="max-w-lg rounded-lg bg-gray-100 px-4 py-2 text-gray-900">
             <ThinkingCollapsible steps={streamingSteps} isStreaming={isStreaming ?? false} />
