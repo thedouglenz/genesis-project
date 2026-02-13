@@ -42,13 +42,16 @@ export default function MessageList({
         )
       )}
 
-      {pendingUserMessage && (
-        <div className="flex justify-end">
-          <div className="max-w-lg rounded-lg bg-blue-600 px-4 py-2 text-white">
-            {pendingUserMessage}
+      {pendingUserMessage &&
+        !messages.some(
+          (m) => m.role === 'user' && m.content === pendingUserMessage
+        ) && (
+          <div className="flex justify-end">
+            <div className="max-w-lg rounded-lg bg-blue-600 px-4 py-2 text-white">
+              {pendingUserMessage}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {streamingSteps && (
         <div className="flex justify-start">

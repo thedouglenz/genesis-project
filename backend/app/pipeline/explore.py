@@ -102,7 +102,7 @@ class ExploreStep(PipelineStep):
                     {
                         "role": "tool",
                         "tool_call_id": tc.id,
-                        "content": json.dumps(result),
+                        "content": json.dumps(result, default=str),
                     }
                 )
 
@@ -117,4 +117,4 @@ class ExploreStep(PipelineStep):
                 ),
             }
         )
-        return await llm_client.chat_json(messages, ExploreOutput)
+        return await llm_client.chat_json(messages, ExploreOutput, tools=tool_defs)

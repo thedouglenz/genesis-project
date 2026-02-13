@@ -29,7 +29,7 @@ export function useCreateConversation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { data } = await client.post<Conversation>('/api/conversations');
+      const { data } = await client.post<Conversation>('/api/conversations', {});
       return data;
     },
     onSuccess: () => {
@@ -66,10 +66,8 @@ export function useSendMessage() {
       );
       return data;
     },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ['conversation', variables.conversationId],
-      });
-    },
+    // No onSuccess invalidation — the SSE hook invalidates when the pipeline completes,
+    // which avoids duplicate user messages (optimistic + refetched).
+
   });
 }

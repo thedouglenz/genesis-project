@@ -11,7 +11,7 @@ class ListTablesTool(Tool):
 
     name = "list_tables"
     description = "Returns all available tables in the target database."
-    parameters: dict = {}
+    parameters: dict = {"type": "object", "properties": {}}
 
     async def execute(self, params: dict) -> Any:
         async with target_engine.connect() as conn:
