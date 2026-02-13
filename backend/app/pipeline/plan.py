@@ -37,13 +37,15 @@ class PlanStep(PipelineStep):
 
         system_content = self.system_prompt
         if schema_context:
-            system_content += (
-                "\n\nAvailable database schema:\n"
-                + "\n".join(
-                    f"- {table}: {', '.join(cols)}"
-                    for table, cols in schema_context.items()
-                )
-            )
+            lines = []
+            for table, cols in schema_context.items():
+                if isinstance(cols, (list, tuple)):
+                    lines.append(f"- {table}: {', '.join(str(c) for c in cols)}")
+                elif isinstance(cols, dict):
+                    lines.append(f"- {table}: {', '.join(cols.keys())}")
+                else:
+                    lines.append(f"- {table}: {cols}")
+            system_content += "\n\nAvailable database schema:\n" + "\n".join(lines)
 
         if input_data.get("_last_error"):
             system_content += (
