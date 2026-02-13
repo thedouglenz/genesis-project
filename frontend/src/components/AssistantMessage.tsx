@@ -14,6 +14,8 @@ import {
   Cell,
   ResponsiveContainer,
 } from 'recharts';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Message, ChartData } from '../types';
 import type { StepState } from '../hooks/useSSE';
 import ThinkingCollapsible from './ThinkingCollapsible';
@@ -83,7 +85,11 @@ export default function AssistantMessage({ message, streamingSteps, isStreaming 
         <ThinkingCollapsible pipelineData={message.pipeline_data} />
       )}
 
-      {message.content && <p className="whitespace-pre-wrap">{message.content}</p>}
+      {message.content && (
+        <div className="prose prose-sm prose-gray max-w-none">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+        </div>
+      )}
 
       {message.table_data && (
         <div className="overflow-x-auto">
