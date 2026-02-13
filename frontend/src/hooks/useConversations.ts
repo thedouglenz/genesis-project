@@ -51,7 +51,6 @@ export function useDeleteConversation() {
 }
 
 export function useSendMessage() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
       conversationId,

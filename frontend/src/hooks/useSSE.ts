@@ -37,7 +37,7 @@ export function useSSE(conversationId: string | null, enabled: boolean) {
 
     async function stream() {
       const token = localStorage.getItem('token');
-      const baseUrl = import.meta.env.VITE_API_URL;
+      const baseUrl = import.meta.env.VITE_API_URL || '';
 
       let response: Response;
       try {
