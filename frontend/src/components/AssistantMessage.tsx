@@ -34,7 +34,7 @@ function ChartRenderer({ chart }: { chart: ChartData }) {
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis dataKey="name" stroke="#9ca3af" />
             <YAxis stroke="#9ca3af" />
-            <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#f3f4f6' }} />
+            <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }} labelStyle={{ color: '#f3f4f6' }} itemStyle={{ color: '#d1d5db' }} cursor={{ fill: 'rgba(255,255,255,0.06)' }} />
             <Bar dataKey="value" fill="#3b82f6" />
           </BarChart>
         ) : chart.type === 'line' ? (
@@ -42,12 +42,12 @@ function ChartRenderer({ chart }: { chart: ChartData }) {
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis dataKey="name" stroke="#9ca3af" />
             <YAxis stroke="#9ca3af" />
-            <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#f3f4f6' }} />
+            <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }} labelStyle={{ color: '#f3f4f6' }} itemStyle={{ color: '#d1d5db' }} cursor={{ stroke: '#6b7280' }} />
             <Line type="monotone" dataKey="value" stroke="#3b82f6" />
           </LineChart>
         ) : chart.type === 'pie' ? (
           <PieChart>
-            <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#f3f4f6' }} />
+            <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }} labelStyle={{ color: '#f3f4f6' }} itemStyle={{ color: '#d1d5db' }} />
             <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}>
               {data.map((_, i) => (
                 <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -59,7 +59,7 @@ function ChartRenderer({ chart }: { chart: ChartData }) {
             <CartesianGrid stroke="#374151" />
             <XAxis dataKey="name" stroke="#9ca3af" />
             <YAxis dataKey="value" stroke="#9ca3af" />
-            <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#f3f4f6' }} />
+            <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }} labelStyle={{ color: '#f3f4f6' }} itemStyle={{ color: '#d1d5db' }} cursor={{ stroke: '#6b7280' }} />
             <Scatter data={data} fill="#3b82f6" />
           </ScatterChart>
         )}
