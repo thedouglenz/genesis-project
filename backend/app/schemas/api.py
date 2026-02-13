@@ -72,6 +72,7 @@ class PlanOutput(BaseModel):
     suggested_chart_type: Literal["bar", "line", "pie", "scatter"] | None = None
     tables_to_explore: list[str]
     conversation_name: str | None = None
+    skip_explore: bool = False
 
 
 class QueryExecuted(BaseModel):
