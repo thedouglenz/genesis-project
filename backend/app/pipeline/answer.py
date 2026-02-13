@@ -22,7 +22,8 @@ class AnswerStep(PipelineStep):
     async def execute(self, input_data: Any, llm_client: LLMClient) -> AnswerOutput:
         question = input_data["question"]
         plan = input_data["plan"]
-        exploration = input_data["exploration"]
+        exploration = input_data.get("exploration")
+        history = input_data.get("history", [])
 
         answer_type = plan["expected_answer_type"]
 
@@ -38,23 +39,36 @@ class AnswerStep(PipelineStep):
                 " Include table_data with columns and rows representing the dataset."
             )
 
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    f"{self.system_prompt}\n\n"
-                    f"Format instructions: {format_instructions}"
-                ),
-            },
-            {
+        system_content = f"{self.system_prompt}\n\nFormat instructions: {format_instructions}"
+
+        if exploration:
+            messages = [
+                {"role": "system", "content": system_content},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Question: {question}\n\n"
+                        f"Plan: {plan}\n\n"
+                        f"Exploration notes: {exploration.get('exploration_notes', '')}\n\n"
+                        f"Raw data: {exploration.get('raw_data', '')}"
+                    ),
+                },
+            ]
+        else:
+            messages = [
+                {
+                    "role": "system",
+                    "content": (
+                        f"{system_content}\n\n"
+                        "No new data exploration was performed. Use the conversation "
+                        "history to answer the question."
+                    ),
+                },
+            ]
+            messages.extend(history)
+            messages.append({
                 "role": "user",
-                "content": (
-                    f"Question: {question}\n\n"
-                    f"Plan: {plan}\n\n"
-                    f"Exploration notes: {exploration.get('exploration_notes', '')}\n\n"
-                    f"Raw data: {exploration.get('raw_data', '')}"
-                ),
-            },
-        ]
+                "content": f"Question: {question}\n\nPlan: {plan}",
+            })
 
         return await llm_client.chat_json(messages, AnswerOutput)
