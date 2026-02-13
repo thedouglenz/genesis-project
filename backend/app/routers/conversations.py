@@ -1,4 +1,5 @@
 import asyncio
+import json
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -114,10 +115,27 @@ async def send_message(conversation_id: uuid.UUID, req: SendMessageRequest, curr
         )
         prior_messages = msg_result.scalars().all()
 
-        history = [
-            {"role": m.role, "content": m.content or ""}
-            for m in prior_messages
-        ]
+        history = []
+        last_assistant = None
+        for m in prior_messages:
+            if m.role == "assistant":
+                last_assistant = m
+            history.append({"role": m.role, "content": m.content or ""})
+
+        if last_assistant and history:
+            # Enrich the last assistant message with structured data so
+            # follow-ups like "make that a pie chart" have the actual data.
+            last_idx = next(
+                i for i in range(len(history) - 1, -1, -1)
+                if history[i]["role"] == "assistant"
+            )
+            extra = ""
+            if last_assistant.chart_data:
+                extra += f"\n\n[Chart data: {json.dumps(last_assistant.chart_data)}]"
+            if last_assistant.table_data:
+                extra += f"\n\n[Table data: {json.dumps(last_assistant.table_data)}]"
+            if extra:
+                history[last_idx]["content"] += extra
 
         # Extract schema_context from last ExploreOutput in pipeline history
         schema_context = None
