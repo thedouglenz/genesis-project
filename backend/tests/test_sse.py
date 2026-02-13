@@ -198,3 +198,73 @@ async def test_orchestrator_emits_events():
     assert ("explore", "completed") in step_events
     assert ("answer", "running") in step_events
     assert ("answer", "completed") in step_events
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_emits_events_skip_explore():
+    """Pipeline.run() emits only plan+answer events when skip_explore=True."""
+    from app.pipeline.orchestrator import Pipeline
+    from app.schemas.api import ExploreOutput, PlanOutput
+
+    conv_id = uuid.uuid4()
+    msg_id = uuid.uuid4()
+
+    ctx, session = _mock_session()
+
+    def track_add(obj):
+        obj.id = uuid.uuid4()
+
+    session.add = track_add
+    session.refresh = AsyncMock()
+
+    fake_plan = PlanOutput(
+        reasoning="Reformat prior data",
+        query_strategy="Use conversation history",
+        expected_answer_type="chart",
+        suggested_chart_type="pie",
+        tables_to_explore=[],
+        skip_explore=True,
+    )
+    fake_answer = AnswerOutput(text_answer="Pie chart", table_data=None, chart_data=None)
+
+    call_count = 0
+
+    async def mock_execute_with_retry(input_data, llm_client):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return fake_plan
+        else:
+            return fake_answer
+
+    received_events = []
+    original_emit = events.emit
+
+    async def capture_emit(cid, data):
+        received_events.append(data)
+        await original_emit(cid, data)
+
+    with (
+        patch("app.pipeline.orchestrator.AppSession", return_value=ctx),
+        patch("app.pipeline.orchestrator.LLMClient"),
+        patch("app.pipeline.orchestrator.events.emit", side_effect=capture_emit),
+    ):
+        pipeline = Pipeline(conv_id, msg_id)
+        for step in pipeline.steps:
+            step.execute_with_retry = mock_execute_with_retry
+
+        await pipeline.run(
+            "Show as pie chart",
+            conversation_history=[
+                {"role": "user", "content": "How many per industry?"},
+                {"role": "assistant", "content": "Construction: 34..."},
+            ],
+        )
+
+    step_events = [(e.get("step"), e.get("status")) for e in received_events]
+    assert ("plan", "running") in step_events
+    assert ("plan", "completed") in step_events
+    assert ("explore", "running") not in step_events
+    assert ("explore", "completed") not in step_events
+    assert ("answer", "running") in step_events
+    assert ("answer", "completed") in step_events
