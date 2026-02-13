@@ -1,8 +1,24 @@
 import type { Message } from '../types';
+import type { StepState } from '../hooks/useSSE';
 import AssistantMessage from './AssistantMessage';
+import ThinkingCollapsible from './ThinkingCollapsible';
 
-export default function MessageList({ messages }: { messages: Message[] }) {
-  if (messages.length === 0) {
+interface MessageListProps {
+  messages: Message[];
+  pendingUserMessage?: string;
+  streamingSteps?: StepState[];
+  isStreaming?: boolean;
+}
+
+export default function MessageList({
+  messages,
+  pendingUserMessage,
+  streamingSteps,
+  isStreaming,
+}: MessageListProps) {
+  const hasContent = messages.length > 0 || pendingUserMessage;
+
+  if (!hasContent) {
     return (
       <div className="flex flex-1 items-center justify-center text-gray-400">
         Ask a question about your data
@@ -24,6 +40,22 @@ export default function MessageList({ messages }: { messages: Message[] }) {
             <AssistantMessage message={msg} />
           </div>
         )
+      )}
+
+      {pendingUserMessage && (
+        <div className="flex justify-end">
+          <div className="max-w-lg rounded-lg bg-blue-600 px-4 py-2 text-white">
+            {pendingUserMessage}
+          </div>
+        </div>
+      )}
+
+      {streamingSteps && (
+        <div className="flex justify-start">
+          <div className="max-w-lg rounded-lg bg-gray-100 px-4 py-2 text-gray-900">
+            <ThinkingCollapsible steps={streamingSteps} isStreaming={isStreaming ?? false} />
+          </div>
+        </div>
       )}
     </div>
   );
