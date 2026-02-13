@@ -106,6 +106,18 @@ Ran the full app (backend on :8000, frontend on :5174) and tested the complete f
 - Delete conversation from sidebar
 - Logout redirects to login page
 
+### Feature: conversation naming
+
+The plan step now generates a short conversation name on the first message (when there's no history). Added `conversation_name` to `PlanOutput` and the plan system prompt. The orchestrator updates the conversation title after the plan completes. The SSE hook invalidates the sidebar conversation list so the new name appears without a page refresh.
+
+### Feature: persistent pipeline thinking
+
+Pipeline step data is now persisted on the assistant message as `pipeline_data` (JSONB column). After the pipeline completes, `_run_pipeline` builds a summary from the PipelineStep records — plan reasoning/strategy, explore queries/notes, answer status — and saves it on the message. The ThinkingCollapsible component now has two modes: streaming (live spinners during pipeline execution) and persisted (collapsed "Analyzed in N steps" with expandable step details loaded from the message). Migration in `db/migrations/001_add_pipeline_data.sql`.
+
+### Fix: empty chat bubble race condition
+
+After the explore step completed, there was a long pause with an empty assistant chat bubble before the answer appeared. Root cause: the orchestrator emitted `{"step": "done"}` before `_run_pipeline()` had written the answer content to the database. The frontend's SSE hook saw "done", invalidated the query, and TanStack refetched the message — but it still had null content. Fixed by moving the "done" event emission to `_run_pipeline()` after the content commit. Also added a guard in ChatPane to only clear optimistic state when the refetched data actually contains the assistant response.
+
 ### Housekeeping
 
 - Removed project plan and `.env` from git tracking; added both to `.gitignore`
