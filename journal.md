@@ -82,6 +82,30 @@ Implemented the frontend in three waves, mirroring the backend approach.
 
 TypeScript compiles clean with zero errors.
 
+### End-to-end testing
+
+Ran the full app (backend on :8000, frontend on :5174) and tested the complete flow. Found and fixed four issues:
+
+1. **Tool schema validation** — `ListTablesTool.parameters` was an empty dict `{}`. Anthropic's API requires `{"type": "object", "properties": {}}` even for parameterless tools. The explore step's tool-call loop couldn't start without this.
+
+2. **Decimal serialization** — Postgres numeric columns return Python `Decimal` objects. `json.dumps()` in the explore step's tool result serialization choked on them. Fixed with `default=str` fallback.
+
+3. **Tool messages without tools definition** — After the explore loop finishes its tool calls, the summarization call (`chat_json`) was sending the full message history (containing tool_calls and tool role messages) without a `tools` parameter. Anthropic rejects this. Fixed by passing `tools=tool_defs` through to the summarization call.
+
+4. **Duplicate user messages** — Two sources: (a) `useSendMessage.onSuccess` was invalidating the conversation query, causing TanStack to refetch the server-persisted user message while the optimistic one was still displayed. Removed the premature invalidation — the SSE hook already invalidates on completion. (b) TanStack's default `staleTime: 0` could still trigger refetches during re-renders. Added deduplication in MessageList to skip the optimistic message if the server messages already contain it.
+
+5. **Conversation creation 422** — Frontend was sending `POST /api/conversations` with no body. FastAPI expects a JSON body for `CreateConversationRequest` even though all fields are optional. Fixed by sending `{}`.
+
+**Verified working:**
+- Login with admin/admin
+- Create conversation (auto-selects)
+- Scalar answer: "How many companies are in the dataset?" → "There are 500 companies"
+- Chart answer: "Show me average ARR by industry as a bar chart" → text analysis + Recharts bar chart
+- Table answer: "List the top 5 companies by ARR" → text + HTML table + bar chart
+- Conversation history maintained across follow-up questions
+- Delete conversation from sidebar
+- Logout redirects to login page
+
 ### Housekeeping
 
 - Removed project plan and `.env` from git tracking; added both to `.gitignore`
