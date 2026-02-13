@@ -88,7 +88,7 @@ async def test_query_select():
 @pytest.mark.asyncio
 async def test_query_rejects_insert():
     tool = QueryTool()
-    with pytest.raises(ValueError, match="Forbidden keyword"):
+    with pytest.raises(ValueError, match="Only SELECT"):
         await tool.execute({"sql": "INSERT INTO companies VALUES (999, 'test')"})
 
 
