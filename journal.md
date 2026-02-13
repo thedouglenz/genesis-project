@@ -64,6 +64,24 @@ Implemented the full backend in three waves, working bottom-up through the depen
 
 **Testing:** 57 tests, all fully mocked (no real DB or network I/O), run in under 1 second.
 
+### Frontend implementation
+
+Implemented the frontend in three waves, mirroring the backend approach.
+
+**Core chat flow:**
+- SSE hook (`useSSE`) — uses `fetch` with ReadableStream instead of EventSource so we can send the Authorization header. Tracks step states, sets completion flag, invalidates the TanStack conversation query when the pipeline finishes so the real assistant message replaces the streaming placeholder.
+- ThinkingCollapsible — shows live pipeline progress (Planning → Exploring data → Generating answer) with spinners and checkmarks. Auto-expands while streaming, collapses to "Thought for N steps" when done.
+- Optimistic message display — user message appears immediately in the chat before the API returns. A placeholder assistant area shows ThinkingCollapsible while the pipeline runs. When SSE completes and TanStack refetches, the real response (text/table/chart) replaces the placeholder.
+
+**Polish:**
+- Conversation titles default to "New conversation" when no title is set
+- Logout button in sidebar — clears token, resets auth state
+- Loading spinner while conversation data loads
+- Dismissible error banner when message send fails
+- Delete conversations from sidebar with hover trash icon
+
+TypeScript compiles clean with zero errors.
+
 ### Housekeeping
 
 - Removed project plan and `.env` from git tracking; added both to `.gitignore`
