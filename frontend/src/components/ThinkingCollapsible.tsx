@@ -118,7 +118,7 @@ export default function ThinkingCollapsible(props: ThinkingCollapsibleProps) {
                 {s.queries && s.queries.length > 0 && (
                   <div className="pl-5.5 space-y-0.5">
                     {s.queries.map((q, qi) => (
-                      <code key={qi} className="block text-xs text-gray-500 font-mono truncate">
+                      <code key={qi} className="block overflow-x-auto whitespace-pre text-xs text-gray-500 font-mono">
                         {q}
                       </code>
                     ))}
