@@ -15,16 +15,32 @@ interface PersistedProps {
 
 type ThinkingCollapsibleProps = StreamingProps | PersistedProps;
 
-const STEP_LABELS: Record<string, { running: string; done: string }> = {
-  plan: { running: 'Planning...', done: 'Planned' },
-  explore: { running: 'Exploring data...', done: 'Explored data' },
-  answer: { running: 'Generating answer...', done: 'Generated answer' },
+const STEP_LABELS: Record<string, { running: string; done: string; info: string }> = {
+  plan: { running: 'Planning...', done: 'Planned', info: 'Analyzes your question and decides what data to look for' },
+  explore: { running: 'Exploring data...', done: 'Explored data', info: 'Queries the database to gather relevant data' },
+  answer: { running: 'Generating answer...', done: 'Generated answer', info: 'Formats the results into text, tables, or charts' },
 };
 
+function InfoIcon({ tooltip }: { tooltip: string }) {
+  return (
+    <span
+      title={tooltip}
+      className="ml-1 inline-flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full bg-gray-200 text-[9px] font-bold text-gray-500"
+    >
+      i
+    </span>
+  );
+}
+
 function StepLabel({ step, status }: { step: string; status: string }) {
-  const labels = STEP_LABELS[step] ?? { running: step, done: step };
+  const labels = STEP_LABELS[step] ?? { running: step, done: step, info: '' };
   const isRunning = status === 'running' || status === 'started';
-  return <span>{isRunning ? labels.running : labels.done}</span>;
+  return (
+    <span className="inline-flex items-center">
+      {isRunning ? labels.running : labels.done}
+      {labels.info && <InfoIcon tooltip={labels.info} />}
+    </span>
+  );
 }
 
 function Spinner() {
