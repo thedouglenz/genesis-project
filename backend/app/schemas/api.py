@@ -106,3 +106,30 @@ class AnswerOutput(BaseModel):
     text_answer: str
     table_data: TableData | None = None
     chart_data: ChartData | None = None
+
+
+# --- Pipeline run response schemas ---
+
+
+class PipelineStepResponse(BaseModel):
+    id: uuid.UUID
+    step_name: str
+    step_order: int
+    status: str
+    attempts: int
+    error: str | None = None
+    created_at: datetime
+    completed_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class PipelineRunResponse(BaseModel):
+    id: uuid.UUID
+    message_id: uuid.UUID
+    status: str
+    created_at: datetime
+    completed_at: datetime | None = None
+    steps: list[PipelineStepResponse]
+
+    model_config = {"from_attributes": True}

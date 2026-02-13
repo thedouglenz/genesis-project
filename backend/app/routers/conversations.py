@@ -16,6 +16,7 @@ from app.schemas.api import (
     ConversationResponse,
     CreateConversationRequest,
     MessageResponse,
+    PipelineRunResponse,
     SendMessageRequest,
 )
 from app.services import events
@@ -160,7 +161,15 @@ async def stream_pipeline(conversation_id: uuid.UUID, current_user: str = Depend
     return EventSourceResponse(events.subscribe(str(conversation_id)))
 
 
-@router.get("/{conversation_id}/pipeline-runs")
+@router.get("/{conversation_id}/pipeline-runs", response_model=list[PipelineRunResponse])
 async def get_pipeline_runs(conversation_id: uuid.UUID, current_user: str = Depends(get_current_user)):
     """Get pipeline runs for a conversation."""
-    raise NotImplementedError
+    async with AppSession() as session:
+        result = await session.execute(
+            select(PipelineRun)
+            .join(Message, PipelineRun.message_id == Message.id)
+            .options(selectinload(PipelineRun.steps))
+            .where(Message.conversation_id == conversation_id)
+            .order_by(PipelineRun.created_at.desc())
+        )
+        return result.scalars().all()
