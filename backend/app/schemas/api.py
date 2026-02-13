@@ -1,0 +1,103 @@
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import Any, Literal
+
+from pydantic import BaseModel
+
+
+# --- Request schemas ---
+
+
+class CreateConversationRequest(BaseModel):
+    title: str | None = None
+
+
+class SendMessageRequest(BaseModel):
+    content: str
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+# --- Response schemas ---
+
+
+class ConversationResponse(BaseModel):
+    id: uuid.UUID
+    title: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class MessageResponse(BaseModel):
+    id: uuid.UUID
+    conversation_id: uuid.UUID
+    role: str
+    content: str | None
+    table_data: dict | None = None
+    chart_data: dict | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ConversationDetailResponse(BaseModel):
+    id: uuid.UUID
+    title: str | None
+    created_at: datetime
+    updated_at: datetime
+    messages: list[MessageResponse]
+
+    model_config = {"from_attributes": True}
+
+
+class LoginResponse(BaseModel):
+    token: str
+
+
+# --- Pipeline output schemas ---
+
+
+class PlanOutput(BaseModel):
+    reasoning: str
+    query_strategy: str
+    expected_answer_type: Literal["scalar", "dataset", "chart"]
+    suggested_chart_type: Literal["bar", "line", "pie", "scatter"] | None = None
+    tables_to_explore: list[str]
+
+
+class QueryExecuted(BaseModel):
+    sql: str
+    result_summary: str
+
+
+class ExploreOutput(BaseModel):
+    queries_executed: list[QueryExecuted]
+    raw_data: Any
+    exploration_notes: str
+    schema_context: dict
+
+
+class ChartData(BaseModel):
+    type: Literal["bar", "line", "pie", "scatter"]
+    title: str
+    x_axis: str
+    y_axis: str
+    data: list[dict]
+
+
+class TableData(BaseModel):
+    columns: list[str]
+    rows: list[list[Any]]
+
+
+class AnswerOutput(BaseModel):
+    text_answer: str
+    table_data: TableData | None = None
+    chart_data: ChartData | None = None
