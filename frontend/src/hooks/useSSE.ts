@@ -92,6 +92,9 @@ export function useSSE(conversationId: string | null, enabled: boolean) {
               queryClient.invalidateQueries({
                 queryKey: ['conversation', conversationId],
               });
+              queryClient.invalidateQueries({
+                queryKey: ['conversations'],
+              });
               return;
             }
 

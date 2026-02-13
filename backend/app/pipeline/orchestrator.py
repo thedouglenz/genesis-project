@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from app.database import AppSession
 from app.services import events
-from app.models.app import PipelineRun
+from app.models.app import Conversation, PipelineRun
 from app.models.app import PipelineStep as PipelineStepModel
 from app.pipeline.answer import AnswerStep
 from app.pipeline.base import PipelineStep
@@ -124,6 +124,17 @@ class Pipeline:
                     # Track outputs for downstream steps
                     if step.name == "plan":
                         plan_output = result
+                        # Update conversation title if the plan step produced a name
+                        if plan_output.conversation_name:
+                            convo_result = await session.execute(
+                                select(Conversation).where(
+                                    Conversation.id == self.conversation_id
+                                )
+                            )
+                            convo = convo_result.scalar_one_or_none()
+                            if convo and not convo.title:
+                                convo.title = plan_output.conversation_name
+                                await session.commit()
                     elif step.name == "explore":
                         explore_output = result
                     elif step.name == "answer":

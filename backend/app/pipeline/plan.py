@@ -19,7 +19,10 @@ class PlanStep(PipelineStep):
         "You are a data analysis planner. Given a user question about a dataset, "
         "reason about what data exploration is needed to answer it. Determine the "
         "expected answer format (scalar, dataset, or chart) and identify which tables "
-        "to explore."
+        "to explore.\n\n"
+        "If the conversation history is empty (this is the first message), also generate "
+        "a short 3-5 word conversation name summarizing the user's question in the "
+        "conversation_name field. Otherwise, leave conversation_name as null."
     )
 
     async def execute(self, input_data: dict[str, Any], llm_client: LLMClient) -> PlanOutput:

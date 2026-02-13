@@ -42,6 +42,7 @@ class MessageResponse(BaseModel):
     content: str | None
     table_data: dict | None = None
     chart_data: dict | None = None
+    pipeline_data: dict | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -70,6 +71,7 @@ class PlanOutput(BaseModel):
     expected_answer_type: Literal["scalar", "dataset", "chart"]
     suggested_chart_type: Literal["bar", "line", "pie", "scatter"] | None = None
     tables_to_explore: list[str]
+    conversation_name: str | None = None
 
 
 class QueryExecuted(BaseModel):
