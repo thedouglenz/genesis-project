@@ -11,12 +11,14 @@ interface SSEEvent {
   step: string;
   status?: string;
   summary?: string;
+  error?: string;
 }
 
 export function useSSE(conversationId: string | null, enabled: boolean) {
   const [steps, setSteps] = useState<StepState[]>([]);
   const [isComplete, setIsComplete] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const queryClient = useQueryClient();
 
@@ -24,6 +26,7 @@ export function useSSE(conversationId: string | null, enabled: boolean) {
     setSteps([]);
     setIsComplete(false);
     setIsStreaming(false);
+    setError(null);
   }, []);
 
   useEffect(() => {
@@ -86,6 +89,10 @@ export function useSSE(conversationId: string | null, enabled: boolean) {
               continue;
             }
 
+            if (event.step === 'error') {
+              setError(event.error ?? 'An error occurred');
+            }
+
             if (event.step === 'done') {
               setIsComplete(true);
               setIsStreaming(false);
@@ -129,5 +136,5 @@ export function useSSE(conversationId: string | null, enabled: boolean) {
     };
   }, [conversationId, enabled, queryClient, reset]);
 
-  return { steps, isComplete, isStreaming, reset };
+  return { steps, isComplete, isStreaming, error, reset };
 }

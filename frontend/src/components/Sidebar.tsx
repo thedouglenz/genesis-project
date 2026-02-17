@@ -1,3 +1,5 @@
+import { useQuery } from '@tanstack/react-query';
+import client from '../api/client';
 import { useConversations, useCreateConversation, useDeleteConversation } from '../hooks/useConversations';
 
 export default function Sidebar({
@@ -12,6 +14,14 @@ export default function Sidebar({
   const { data: conversations, isLoading } = useConversations();
   const createConversation = useCreateConversation();
   const deleteConversation = useDeleteConversation();
+  const { data: llmHealth } = useQuery({
+    queryKey: ['llm-health'],
+    queryFn: async () => {
+      const { data } = await client.get<{ status: string }>('/api/llm-health');
+      return data;
+    },
+    refetchInterval: 30_000,
+  });
 
   const handleNew = async () => {
     const conversation = await createConversation.mutateAsync();
@@ -67,7 +77,15 @@ export default function Sidebar({
           </div>
         ))}
       </nav>
-      <div className="border-t border-gray-700 p-3">
+      <div className="border-t border-gray-700 p-3 space-y-2">
+        <div className="flex items-center gap-2 px-1 text-xs text-gray-500">
+          <span
+            className={`h-2 w-2 rounded-full ${
+              llmHealth?.status === 'ok' ? 'bg-green-400' : 'bg-red-400'
+            }`}
+          />
+          AI service {llmHealth?.status === 'ok' ? 'connected' : 'unavailable'}
+        </div>
         <button
           onClick={onLogout}
           className="w-full rounded px-3 py-2 text-sm text-gray-400 hover:bg-gray-700 hover:text-gray-200"

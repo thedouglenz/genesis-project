@@ -155,8 +155,29 @@ async def send_message(conversation_id: uuid.UUID, req: SendMessageRequest, curr
 
         # Run pipeline as background task so SSE can stream events
         async def _run_pipeline():
-            pipeline = Pipeline(conversation_id, assistant_msg.id)
-            answer = await pipeline.run(req.content, history, schema_context)
+            try:
+                pipeline = Pipeline(conversation_id, assistant_msg.id)
+                answer = await pipeline.run(req.content, history, schema_context)
+            except Exception as exc:
+                # Surface the error to the user instead of silently failing
+                error_msg = str(exc)
+                if "AuthenticationError" in error_msg or "connection" in error_msg.lower():
+                    user_error = "The AI service is temporarily unavailable. Please try again later."
+                else:
+                    user_error = "Something went wrong while processing your question. Please try again."
+
+                async with AppSession() as err_session:
+                    result = await err_session.execute(
+                        select(Message).where(Message.id == assistant_msg.id)
+                    )
+                    msg = result.scalar_one()
+                    msg.content = user_error
+                    await err_session.commit()
+
+                await events.emit(str(conversation_id), {"step": "error", "error": user_error})
+                await events.emit(str(conversation_id), {"step": "done"})
+                return
+
             async with AppSession() as bg_session:
                 result = await bg_session.execute(
                     select(Message).where(Message.id == assistant_msg.id)
