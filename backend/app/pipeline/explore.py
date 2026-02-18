@@ -53,6 +53,12 @@ class ExploreStep(PipelineStep):
             f"Tables to explore: {', '.join(plan_obj.tables_to_explore)}"
         )
 
+        if input_data.get("_last_error"):
+            system_content += (
+                f"\n\nYour previous response had a validation error: {input_data['_last_error']}"
+                "\nPlease correct your output."
+            )
+
         messages: list[dict] = [{"role": "system", "content": system_content}]
         messages.append(
             {"role": "user", "content": "Execute the plan. Call tools to gather the data needed."}

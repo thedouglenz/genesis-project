@@ -41,6 +41,12 @@ class AnswerStep(PipelineStep):
 
         system_content = f"{self.system_prompt}\n\nFormat instructions: {format_instructions}"
 
+        if input_data.get("_last_error"):
+            system_content += (
+                f"\n\nYour previous response had a validation error: {input_data['_last_error']}"
+                "\nPlease correct your output."
+            )
+
         if exploration:
             messages = [
                 {"role": "system", "content": system_content},
